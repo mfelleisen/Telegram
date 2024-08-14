@@ -44,14 +44,23 @@ One can think of a file of words as a list of words. But generating
 the complete lists of words consumes space for all elements when only
 one is needed. Ditto for the file of "records" about telegrams.
 
-- [lists](list.rkt): this is a functional solution that fails to satisfy the
-  constraint; but it serves as a first step toward implementing a
-  stream-based solution.
+- [lists](list.rkt): this is a functional solution that fails to
+  satisfy the constraint; but it serves as a first step toward
+  implementing a stream-based solution.
 
 - [streams](streams.rkt): replace all `cons` etc. operations with
   `stream-cons` etc. in `lists.rkt` and neither transformer generates
   more than one word or telegram at a time. Like the generator
   solutions, it does set up a thunk to compute the rest, on demand.
+
+- [lazy](lazy.rkt): the `lazy` language in Racket's ecosystem should,
+  in principle, turn the `lists` program into a stream-based one,
+  with all the benefits already spelled out. But, `lazy` is a teaching
+  language and its interaction with strict libraries is ad hoc and
+  occasionally broken. Hence the rewrite from `lists` to `lazy` is
+  larger than expected. (I assigned this problem as a dissertation
+  years ago, but it remains unsolved.) 
+
 
 The difference between generators and streams is that generators hide
 the state of the computation while streams make it explicit in the
