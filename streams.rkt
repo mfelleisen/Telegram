@@ -1,10 +1,12 @@
 #lang racket
 
 (require "read-block.rkt")
-(require racket/generator)
+(require racket/stream)
 (module+ test (require rackunit))
 
-;; a solution to Jackson's reformulated telegram problem using functional generators
+;; a solution to Jackson's reformulated telegram problem using streams as intermediate data
+;; unlike the list solution this one merely creates a promise for computing the rest so it
+;; essentially like the generator solution(s).  
 
 ;                                     
 ;                            ;        
@@ -25,38 +27,26 @@
 ;; A long word is 10 chars or longer.
 (define LONG 10)
 
-#; {-> [Generator Word]}
-;; create a generator that turns a series of blocks from a "file" into words, yielding one at a time 
-(define [make-read-file-into-words]
+#; {-> [Streamof Word]}
+(define [read-file-into-words]
   (open-blocked-file)
-  (generator ()
-    (let while ()
-      (define 1block (read-block))
-      (cond
-        [(eof-object? 1block)
-         (close-blocked-file)
-         (yield eof)]
-        [else
-         (define words (string-split 1block))
-         (for ([w words]) (yield w))
-         (while)]))))
+  (let while ()
+    (define 1block (read-block))
+    (cond
+      [(eof-object? 1block)
+       (close-blocked-file)
+       '()]
+      [else
+       (define words (string-split 1block))
+       (stream-append words (while))])))
 
 ;; ---------------------------------------------------------------------------------------------------
 (module+ test
-  (check-equal? (let ()
-                  (define read-file-into-words [make-read-file-into-words])
-                  (with-input-from-string file1 read-file-into-words))
+  (check-equal? (stream-first (with-input-from-string file1 read-file-into-words))
                 word1
                 "deal with one word at a time")
   
-  (check-equal? (let ()
-                  (define read-file-into-words [make-read-file-into-words])
-                  (with-input-from-string file1
-                    (λ ()
-                      (list
-                       (read-file-into-words)
-                       (read-file-into-words)
-                       (read-file-into-words)))))
+  (check-equal? (stream->list (stream-take (with-input-from-string file1 read-file-into-words) 3))
                 (list word1 word2 word3)
                 "deal with one word at a time"))
 
@@ -79,49 +69,34 @@
 
 (define EOT "zzzz")
 
-#; {-> [Generator [List Natural Natural]]}
-;; create a generator that turns a series of words from a generator into information about telegrams,
-;; yielding data about one telegram at a time 
-(define (make-words-to-telegram)
-  (define read-file-into-words [make-read-file-into-words])
-  (generator ()
-    (let while ([words-in-telegram 0] [long-words-in-telegram 0])
-      (define 1word (read-file-into-words))
-      (cond
-        [(eof-object? 1word) eof]
-        [(string=? EOT 1word)
-         (yield (list words-in-telegram long-words-in-telegram))
-         (while 0 0)]
-        [else
-         (while
-           (+ words-in-telegram 1)
-           (+ long-words-in-telegram (if (> (string-length 1word) LONG) 1 0)))]))))
+#; {[Streamof Word] -> [Streamof [List Natural Natural]]}
+(define (words-to-telegram word*0)
+  (let while ([word* word*0][words-in-telegram 0] [long-words-in-telegram 0])
+    (cond
+      [(stream-empty? word*) '()]
+      [else
+       (define 1word (stream-first word*))
+       (cond
+         [(string=? EOT 1word)
+          (stream-cons (list words-in-telegram long-words-in-telegram)
+                       (while
+                         (stream-rest word*)
+                         0
+                         0))]
+         [else
+          (while
+            (stream-rest word*)
+            (+ words-in-telegram 1)
+            (+ long-words-in-telegram (if (> (string-length 1word) LONG) 1 0)))])])))
 
 ;; ---------------------------------------------------------------------------------------------------
 (module+ test
-  (check-equal? (let ()
-                  (define words-to-telegram (make-words-to-telegram))
-                  (with-input-from-string file1
-                    (λ ()
-                      [words-to-telegram]
-                      [words-to-telegram]
-                      [words-to-telegram]
-                      [words-to-telegram]
-                      [words-to-telegram])))
+  (define T (λ () (words-to-telegram (read-file-into-words))))
+  (check-equal? (stream-ref (with-input-from-string file1 T) 4)
                 (list 0 0)
                 "there is an empty telegram at the end of the tile")
 
-  (check-equal? (let ()
-                  (define words-to-telegram (make-words-to-telegram))
-                  (with-input-from-string file1
-                    (λ ()
-                      (length
-                       (list
-                        [words-to-telegram]
-                        [words-to-telegram]
-                        [words-to-telegram]
-                        [words-to-telegram]
-                        [words-to-telegram])))))
+  (check-equal? (length (stream->list (with-input-from-string file1 T)))
                 5
                 "there five telegrams, including the empty one"))
 
@@ -142,7 +117,7 @@
 
 (define (main)
   (print-header)
-  (print-body)
+  (print-body (words-to-telegram [read-file-into-words]))
   (print-done))
 
 (define (print-header)
@@ -151,19 +126,18 @@
 (define (print-done)
   (printf "END ANALYSIS\n"))
 
-#; {-> Void}
+#; {[Streamof [List Natural Natural]] -> Void}
 ;; pull data about telegrants from a generator, yielding one at a time 
-(define (print-body)
-  (define words-to-telegram (make-words-to-telegram))
-  (let while ([i 1])
-    (define 1telegram (words-to-telegram))
+(define (print-body telegram*0)
+  (let while ([telegram* telegram*0][i 1])
     (cond
-      [(eof-object? 1telegram) (void)]
+      [(stream-empty? telegram*) (void)]
       [else
+       (define 1telegram (stream-first telegram*))
        (match-define [list word-count long-word-count] 1telegram)
        (printf "TELEGRAM ~a\n" i)
        (printf " ~a WORDS OF WHICH ~a ARE OVERSIZED\n" word-count long-word-count)
-       (while (+ i 1))])))
+       (while (stream-rest telegram*) (+ i 1))])))
 
 (with-input-from-string file1 main)
-  
+

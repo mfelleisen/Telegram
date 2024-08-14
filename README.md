@@ -27,14 +27,35 @@ transformation is straightforward. Each of them is a generator that
 gathers data until it can use `yield` to deliver it. This `yield`
 instruction causes the program to pause. 
 
-- `functional-generators`: solution exploiting a `yield` that is like
-  `return` in languages, transferring one value from the generator to
-  its consumer.
+- [functional-generators](functional-generators.rkt): solution
+  exploiting a `yield` that is like `return` in languages,
+  transferring one value from the generator to its consumer.
 
-- `imperative-generators`: a variant of the first one that uses
-  assignment statements to a single variable per generator to validate
-  that only one piece of data is in flight at any time. 
+- [imperative-generators](imperative-generators.rkt): a variant of the
+  first one that uses assignment statements to a single variable per
+  generator to validate that only one piece of data is in flight at
+  any time.
 
+### Lists and Streams
+
+One can think of a file of words as a list of words. But generating
+the complete lists of words consumes space for all elements when only
+one is needed. Ditto for the file of "records" about telegrams.
+
+- [lists](list.rkt): this is a functional solution that fails to satisfy the
+  constraint; but it serves as a first step toward implementing a
+  stream-based solution.
+
+- [streams](streams.rkt): replace all `cons` etc. operations with
+  `stream-cons` etc. in `lists.rkt` and neither transformer generates
+  more than one word or telegram at a time. Like the generator
+  solutions, it does set up a thunk to compute the rest, on demand.
+
+The difference between generators and streams is that generators hide
+the state of the computation while streams make it explicit in the
+tail of `cons` (or `append`) operations. Hence a generator solution
+uses control _state_, while the stream solution is essentially
+algebraic. 
 
 ### read-block
 
