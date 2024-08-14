@@ -1,6 +1,8 @@
 
 ## Several solutions to Michael Jackson's telegram problem
 
+Source: Principles of Program Design, p. 155
+
 ### Constraints
 
 The blocked file is to be transformed into a series of words. A second
@@ -57,10 +59,24 @@ tail of `cons` (or `append`) operations. Hence a generator solution
 uses control _state_, while the stream solution is essentially
 algebraic. 
 
+### Continuation Passing Style (Program Inversion)
+
+Each transformer can consume an additional functional argument: the
+function that consumes the one word or the one telegram record. This
+extra argument is the continuation relative to the value passed on,
+that is, it deals with this one value and then hands control back to
+the transformer. 
+
+
+- [cps](cps.rkt): use a continuation-passing style to go back and
+  forth between producers and consumers of values 
+
+*Note* This solution comes pretty close to the program-inversion
+ technique in Jackson's book. His use of COBOL obscures the
+ continuation "paragraphs" and there are other small differences.
+
 ### read-block
 
 - a simulation of block reading from files 
 - sample strings that can be used as a "blocked" file of telegrams
   and some leading words of this "blocked file"
-
-
