@@ -82,7 +82,12 @@
 
 (define EOT "zzzz")
 
-#; {type WTT = RFIW {fix K : [[List Natural Natural] [K -> K] -> Empty]} -> Empty}
+;; The information needed about a telegram is a record of its number
+;; of words and the number of overly long words.
+
+#; {type Record = [List Natural Natural]}
+
+#; {type WTT = RFIW {fix K : [Record [K -> K] -> Empty]} -> Empty}
 (define (words-to-telegram R0 yield0)
   (let while ([words-in-telegram 0] [long-words-in=telegram 0] [R R0] [yield yield0])
     (R

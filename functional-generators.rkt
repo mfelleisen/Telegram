@@ -79,7 +79,12 @@
 
 (define EOT "zzzz")
 
-#; {-> [Generator [List Natural Natural]]}
+;; The information needed about a telegram is a record of its number
+;; of words and the number of overly long words.
+
+#; {type Record = [List Natural Natural]}
+
+#; {-> [Generator Record]}
 ;; create a generator that turns a series of words from a generator into information about telegrams,
 ;; yielding data about one telegram at a time 
 (define (make-words-to-telegram)

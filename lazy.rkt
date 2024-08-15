@@ -70,7 +70,12 @@
 
 (define EOT "zzzz")
 
-#; {[Streamof Word] -> [Streamof [List Natural Natural]]}
+;; The information needed about a telegram is a record of its number
+;; of words and the number of overly long words.
+
+#; {type Record = [List Natural Natural]}
+
+#; {[Streamof Word] -> [Streamof Record]}
 (define (words-to-telegram word*0)
   (let while ([word* word*0][words-in-telegram 0] [long-words-in-telegram 0])
     (cond
@@ -125,7 +130,7 @@
 (define (print-done)
   (printf "END ANALYSIS\n"))
 
-#; {[Streamof [List Natural Natural]] -> Void}
+#; {[Streamof Record] -> Void}
 ;; pull data about telegrants from a generator, yielding one at a time 
 (define (print-body telegram*0)
   (let while ([telegram* telegram*0][i 1])
