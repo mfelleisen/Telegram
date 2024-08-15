@@ -84,6 +84,18 @@ the transformer.
  technique in Jackson's book. His use of COBOL obscures the
  continuation "paragraphs" and there are other small differences.
 
+### Teaching
+
+The exercise is suitable for structural recursion if the instructor
+provides `read-block` (which uses generative recursion with
+accumulator) as a library.
+
+*Note* `read-block` could be written w/o gen rec, as a "parsing"
+exercise. See Part V early example.
+
+- [f-1](f-1.rkt): a very accumulator-oriented solution, and it's
+  natural to write them this way. *Exercise* Rewrite those. 
+
 ### read-block
 
 - a simulation of block reading from files 
